@@ -5,6 +5,14 @@ import mediapipe as mp
 import cv2
 import numpy as np
 import base64
+import os
+import sys
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from utils.helpers import normalize_landmarks
+
 # Initialize Flask app
 app = Flask(__name__)
 
@@ -71,38 +79,6 @@ def predict():
         return jsonify({"error": str(e)}), 500
 
 
-def normalize_landmarks(landmarks):
-    """
-    Normalize raw landmark data from dictionaries.
-
-    Args:
-        landmarks (list): List of dictionaries with keys 'x', 'y', 'z'.
-
-    Returns:
-        list: Normalized and flattened landmark values.
-    """
-    # Extract x, y, z values
-    x_vals = [landmark['x'] for landmark in landmarks]
-    y_vals = [landmark['y'] for landmark in landmarks]
-    z_vals = [landmark['z'] for landmark in landmarks]
-
-    # Find min/max for normalization
-    min_x, max_x = min(x_vals), max(x_vals)
-    min_y, max_y = min(y_vals), max(y_vals)
-    min_z, max_z = min(z_vals), max(z_vals)
-
-    # Normalize coordinates to range [0, 1]
-    normalized_landmarks = [
-        {
-            "x": (landmark['x'] - min_x) / (max_x - min_x) if max_x - min_x > 0 else 0,
-            "y": (landmark['y'] - min_y) / (max_y - min_y) if max_y - min_y > 0 else 0,
-            "z": (landmark['z'] - min_z) / (max_z - min_z) if max_z - min_z > 0 else 0,
-        }
-        for landmark in landmarks
-    ]
-
-    # Flatten the normalized coordinates into a single list
-    return [value for coord in normalized_landmarks for value in coord.values()]
 
 if __name__ == '__main__':
     # Run the Flask app
