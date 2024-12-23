@@ -87,9 +87,8 @@ def evaluate_model(model_path, test_dir, class_to_idx):
         outputs = model(inputs)
         _, predictions = torch.max(outputs, 1)
 
-    # Convert predictions and labels to CPU for sklearn
-    predictions = predictions.cpu().numpy()  # Convert to NumPy array
-    labels = labels.cpu().numpy()            # Convert to NumPy array
+    predictions = predictions.cpu().numpy()  
+    labels = labels.cpu().numpy()            
 
     # Evaluate
     acc = accuracy_score(labels, predictions)

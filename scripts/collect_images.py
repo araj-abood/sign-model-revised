@@ -9,7 +9,6 @@ import cv2
 import mediapipe as mp
 import json
 import time
-from PIL import Image, ImageDraw, ImageFont
 from bidi.algorithm import get_display
 import numpy as np
 from utils.helpers import render_arabic_text
