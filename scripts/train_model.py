@@ -109,8 +109,10 @@ def train_model(data_dir, model_save_path, epochs=50, batch_size=32, learning_ra
     os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
     torch.save({
         'model_state_dict': model.state_dict(),
+        'input_size': input_size,
+        'num_classes': num_classes,
         'class_to_idx': dataset.class_to_idx
-    }, model_save_path)
+    }, model_save_path) 
     print(f"Model saved to {model_save_path}")
 
 # Example usage

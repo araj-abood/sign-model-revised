@@ -127,7 +127,7 @@ if __name__ == "__main__":
     signs = ["ثلاث", "اثنان", "واحد"]
 
     # Number of samples to capture per sign
-    samples_per_sign = 20
+    samples_per_sign = 30
 
     # Start capturing landmarks
     capture_landmarks(output_directory, signs, samples_per_sign)
