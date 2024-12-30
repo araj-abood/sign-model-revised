@@ -12,55 +12,38 @@ from preprocess_landmarks import normalize_landmarks_by_bounding_box
 from utils.helpers import render_arabic_text
 import mediapipe as mp
 
-# Load the model
 MODEL_PATH = "d:/programming/grad-project/sign-ai-model/data/model/sign_language_model.pth"
 checkpoint = torch.load(MODEL_PATH, map_location=torch.device('cpu'))
 
-# Reinitialize the model architecture
-from train_model import SignLanguageModel  # Replace with your model class
+from train_model import SignLanguageModel 
 
-# Extract required parameters from checkpoint
-input_size = checkpoint.get('input_size', 128)  # Replace 128 with your actual input size
-num_classes = checkpoint.get('num_classes', 26)  # Replace 26 with your actual number of classes
+input_size = checkpoint.get('input_size', 128)  
+num_classes = checkpoint.get('num_classes', 26) 
 
 if input_size is None or num_classes is None:
     raise ValueError("Checkpoint is missing required keys 'input_size' or 'num_classes'.")
 
-# Initialize the model architecture
 model = SignLanguageModel(input_size=input_size, num_classes=num_classes)
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
 
-# Load additional metadata if needed
 class_to_idx = checkpoint.get('class_to_idx', {})
 idx_to_class = {v: k for k, v in class_to_idx.items()}
 
 print("Resolved MODEL_PATH:", os.path.abspath(MODEL_PATH))
 
-# Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5)
 
 
 def predict_landmarks(landmarks):
-    """
-    Predict the sign using normalized landmarks.
-    
-    Args:
-        landmarks (list): Normalized hand landmarks.
-        
-    Returns:
-        str: Predicted sign label.
-    """
-    # Flatten the landmarks
+
     input_tensor = torch.tensor([landmarks], dtype=torch.float32)
     with torch.no_grad():
         predictions = model(input_tensor)
         predicted_label_idx = torch.argmax(predictions, dim=1).item()
-    # Map the numeric prediction to the corresponding class label
     return idx_to_class.get(predicted_label_idx, "Unknown")
 
-# Initialize the camera
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     print("Error: Unable to access the camera.")
@@ -76,7 +59,6 @@ while True:
         print("Failed to grab frame.")
         break
 
-    # Detect hand landmarks using MediaPipe
     results = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
     detected_landmarks = []
@@ -96,7 +78,6 @@ while True:
         flattened_landmarks = [value for lm in normalized_landmarks for value in lm.values()]
         print("Flattened Landmarks:", flattened_landmarks)
 
-        # Pad input if necessary
         if len(flattened_landmarks) < input_size:
             flattened_landmarks.extend([0.0] * (input_size - len(flattened_landmarks)))
         elif len(flattened_landmarks) > input_size:
@@ -104,21 +85,16 @@ while True:
 
         print("Input Tensor Shape:", len(flattened_landmarks))
 
-        # Predict using the model
         prediction = predict_landmarks(flattened_landmarks)
         print("Predicted Class:", prediction)
 
-        # Render prediction on the frame
         label_text = f"Prediction: {prediction}"
         frame = render_arabic_text(frame, label_text, position=(50, 50))
 
-    # Display the frame
     cv2.imshow('Sign Language Recognition', frame)
 
-    # Break loop on 'q' key press
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release resources
 cap.release()
 cv2.destroyAllWindows()

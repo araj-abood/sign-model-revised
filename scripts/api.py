@@ -13,10 +13,8 @@ if project_root not in sys.path:
 
 from utils.helpers import normalize_landmarks
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# Load the model and metadata
 MODEL_PATH = "data/model/sign_language_model.pth"
 checkpoint = torch.load(MODEL_PATH)
 class_to_idx = checkpoint['class_to_idx']
@@ -26,7 +24,6 @@ model = SignLanguageModel(input_size=126, num_classes=len(class_to_idx))
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
 
-# Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
 
 @app.route('/predict', methods=['POST'])
@@ -35,9 +32,8 @@ def predict():
         data = request.json
 
         if 'landmarks' in data:
-            raw_landmarks = data['landmarks']  # List of dictionaries
+            raw_landmarks = data['landmarks']  
         else:
-            # Decode and process the image to extract landmarks
             image_data = base64.b64decode(data['image'])
             np_img = np.frombuffer(image_data, np.uint8)
             image = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
@@ -55,23 +51,19 @@ def predict():
                 for lm in hand_landmarks.landmark
             ]
 
-        # Normalize landmarks
         normalized_landmarks = normalize_landmarks(raw_landmarks)
 
-        # Pad or truncate to model input size
         max_landmark_size = 126
         if len(normalized_landmarks) < max_landmark_size:
             normalized_landmarks.extend([0] * (max_landmark_size - len(normalized_landmarks)))
         elif len(normalized_landmarks) > max_landmark_size:
             normalized_landmarks = normalized_landmarks[:max_landmark_size]
 
-        # Convert to tensor and predict
         input_tensor = torch.FloatTensor(normalized_landmarks).unsqueeze(0)
         with torch.no_grad():
             output = model(input_tensor)
             _, prediction = torch.max(output, 1)
 
-        # Map prediction to class name
         predicted_sign = idx_to_class[prediction.item()]
         return jsonify({"sign": predicted_sign})
 
@@ -81,5 +73,4 @@ def predict():
 
 
 if __name__ == '__main__':
-    # Run the Flask app
     app.run(host='0.0.0.0', port=9000, debug=True)

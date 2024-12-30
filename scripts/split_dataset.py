@@ -3,15 +3,7 @@ import shutil
 import random
 
 def split_dataset(input_dir, train_dir, test_dir, test_ratio=0.2):
-    """
-    Split the dataset into training and testing sets.
 
-    Parameters:
-        input_dir (str): Path to the normalized dataset.
-        train_dir (str): Path to save the training set.
-        test_dir (str): Path to save the testing set.
-        test_ratio (float): Proportion of data to use for testing.
-    """
     os.makedirs(train_dir, exist_ok=True)
     os.makedirs(test_dir, exist_ok=True)
 
@@ -30,7 +22,6 @@ def split_dataset(input_dir, train_dir, test_dir, test_ratio=0.2):
         train_files = files[:split_idx]
         test_files = files[split_idx:]
 
-        # Move files
         for file_name in train_files:
             shutil.copy(os.path.join(class_path, file_name), train_class_path)
 
@@ -39,7 +30,6 @@ def split_dataset(input_dir, train_dir, test_dir, test_ratio=0.2):
 
         print(f"Class {class_name}: {len(train_files)} training, {len(test_files)} testing")
 
-# Example usage
 if __name__ == "__main__":
     input_directory = "data/normalized_landmarks"
     train_directory = "data/train_landmarks"

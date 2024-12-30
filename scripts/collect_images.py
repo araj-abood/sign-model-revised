@@ -13,18 +13,10 @@ from bidi.algorithm import get_display
 import numpy as np
 from utils.helpers import render_arabic_text
 
-# Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 def capture_landmarks(output_dir, sign_labels, num_samples_per_sign):
-    """
-    Capture hand landmarks and save them in a structured format with a delay.
 
-    Parameters:
-        output_dir (str): Directory to save landmarks.
-        sign_labels (list): List of sign labels (e.g., ['السلام عليكم', 'شكرا']).
-        num_samples_per_sign (int): Number of samples to capture per sign.
-    """
     os.makedirs(output_dir, exist_ok=True)
 
     hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5)
@@ -55,31 +47,25 @@ def capture_landmarks(output_dir, sign_labels, num_samples_per_sign):
                 print("Failed to capture frame. Retrying...")
                 continue
 
-            # Flip the frame for a mirrored view
             frame = cv2.flip(frame, 1)
 
-            # Convert the frame to RGB for MediaPipe processing
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             result = hands.process(rgb_frame)
 
-            # Display landmarks on the frame for feedback
             if result.multi_hand_landmarks:
                 for hand_landmarks in result.multi_hand_landmarks:
                     mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            # Display the status and instructions
             frame = render_arabic_text(frame, f"Sign: {sign_label}", (10, 30), font_path="fonts/arial.ttf")
             cv2.putText(frame, f"Samples: {sample_count}/{num_samples_per_sign}",
                         (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
             cv2.putText(frame, "Press 'SPACE' to capture | Press 'q' to quit",
                         (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-            # Handle capturing logic
             if capturing:
                 elapsed_time = time.time() - start_time
-                if elapsed_time >= 2:  # 2-second delay
+                if elapsed_time >= 2: 
                     if result.multi_hand_landmarks:
-                        # Combine landmarks from both hands
                         all_landmarks = []
                         for hand_landmarks in result.multi_hand_landmarks:
                             landmarks = [
@@ -88,7 +74,7 @@ def capture_landmarks(output_dir, sign_labels, num_samples_per_sign):
                             ]
                             all_landmarks.append(landmarks)
 
-                        # Save all combined landmarks to a JSON file
+                      
                         landmark_path = os.path.join(sign_dir, f"{sample_count}.json")
                         with open(landmark_path, "w") as f:
                             json.dump(all_landmarks, f, indent=4)
@@ -97,37 +83,30 @@ def capture_landmarks(output_dir, sign_labels, num_samples_per_sign):
                         sample_count += 1
                         capturing = False
 
-            # Show the frame
             cv2.imshow("Hand Landmark Capture", frame)
 
-            # Handle keyboard events
             key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):  # Quit
+            if key == ord('q'):  
                 print("Exiting...")
                 cap.release()
                 cv2.destroyAllWindows()
                 return
-            elif key == ord(' '):  # Start capturing
+            elif key == ord(' '):  
                 capturing = True
                 start_time = time.time()
                 print("Capturing... Get ready!")
 
         print(f"Finished collecting landmarks for sign: {sign_label}")
 
-    # Release resources
     cap.release()
     cv2.destroyAllWindows()
     print("\nLandmark collection completed.")
 
 if __name__ == "__main__":
-    # Directory to save landmarks
     output_directory = "data/landmarks"
 
-    # List of Arabic signs to capture
     signs = ["ثلاث", "اثنان", "واحد"]
 
-    # Number of samples to capture per sign
     samples_per_sign = 30
 
-    # Start capturing landmarks
     capture_landmarks(output_directory, signs, samples_per_sign)
