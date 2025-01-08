@@ -12,7 +12,7 @@ from preprocess_landmarks import normalize_landmarks_by_bounding_box
 from utils.helpers import render_arabic_text
 import mediapipe as mp
 
-MODEL_PATH = "d:/programming/grad-project/sign-ai-model/data/model/sign_language_model.pth"
+MODEL_PATH = "d:/programs/grad/ai/data/model/sign_language_model.pth"
 checkpoint = torch.load(MODEL_PATH, map_location=torch.device('cpu'))
 
 from train_model import SignLanguageModel 

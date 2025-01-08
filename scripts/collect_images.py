@@ -60,7 +60,7 @@ def capture_landmarks(output_dir, sign_labels, num_samples_per_sign):
             cv2.putText(frame, f"Samples: {sample_count}/{num_samples_per_sign}",
                         (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
             cv2.putText(frame, "Press 'SPACE' to capture | Press 'q' to quit",
-                        (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                        (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
             if capturing:
                 elapsed_time = time.time() - start_time

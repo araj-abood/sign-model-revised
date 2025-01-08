@@ -18,7 +18,7 @@ def decode_image(base64_string):
     return image
 
 
-def render_arabic_text(frame, text, position, font_path="d:/programming/grad-project/sign-ai-model/fonts/Amiri-Regular.ttf", font_size=32, color=(0, 255, 0)):
+def render_arabic_text(frame, text, position, font_path="d:/programs/grad/ai/fonts/Amiri-Regular.ttf", font_size=32, color=(0, 255, 0)):
 
     reshaped_text = arabic_reshaper.reshape(text)
     bidi_text = get_display(reshaped_text)
@@ -30,9 +30,9 @@ def render_arabic_text(frame, text, position, font_path="d:/programming/grad-pro
     pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
     draw = ImageDraw.Draw(pil_image)
 
-    draw.text(position, bidi_text, font=font, fill=(color[2], color[1], color[0]))
+    draw.text(position, bidi_text, font=font, fill=(color[2], color[1], color[0],))
 
-    return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+    return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR,)
 
 
 def normalize_landmarks(landmarks):

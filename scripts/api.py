@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import torch.nn.functional as F 
 import torch
 from train_model import SignLanguageModel
 import mediapipe as mp
@@ -7,6 +8,7 @@ import numpy as np
 import base64
 import os
 import sys
+from preprocess_landmarks import normalize_landmarks_by_bounding_box
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
@@ -16,15 +18,21 @@ from utils.helpers import normalize_landmarks
 app = Flask(__name__)
 
 MODEL_PATH = "data/model/sign_language_model.pth"
+
 checkpoint = torch.load(MODEL_PATH)
 class_to_idx = checkpoint['class_to_idx']
 idx_to_class = {v: k for k, v in class_to_idx.items()}
+
+
 
 model = SignLanguageModel(input_size=126, num_classes=len(class_to_idx))
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
 
 mp_hands = mp.solutions.hands
+
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -51,22 +59,28 @@ def predict():
                 for lm in hand_landmarks.landmark
             ]
 
-        normalized_landmarks = normalize_landmarks(raw_landmarks)
+        normalized_landmarks = normalize_landmarks_by_bounding_box(raw_landmarks)
+
+        flattened_landmarks = [value for lm in normalized_landmarks for value in lm.values()]
 
         max_landmark_size = 126
-        if len(normalized_landmarks) < max_landmark_size:
-            normalized_landmarks.extend([0] * (max_landmark_size - len(normalized_landmarks)))
-        elif len(normalized_landmarks) > max_landmark_size:
-            normalized_landmarks = normalized_landmarks[:max_landmark_size]
+        if len(flattened_landmarks) < max_landmark_size:
+            flattened_landmarks.extend([0.0] * (max_landmark_size - len(flattened_landmarks)))
+        elif len(flattened_landmarks) > max_landmark_size:
+            flattened_landmarks = flattened_landmarks[:max_landmark_size]
 
-        input_tensor = torch.FloatTensor(normalized_landmarks).unsqueeze(0)
+        input_tensor = torch.FloatTensor(flattened_landmarks).unsqueeze(0)
+
         with torch.no_grad():
             output = model(input_tensor)
-            _, prediction = torch.max(output, 1)
+            probabilities = F.softmax(output, dim=1) 
+            confidence, prediction = torch.max(probabilities, 1)
+        
+        confidence_score = confidence.item()  
 
         predicted_sign = idx_to_class[prediction.item()]
-        return jsonify({"sign": predicted_sign})
 
+        return jsonify({"sign": predicted_sign, "confidence": confidence_score}) 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
