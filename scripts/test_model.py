@@ -1,18 +1,21 @@
-
 import torch
 import os
-import sys
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 import json
 import numpy as np
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from scripts.train_model import SignLanguageModel
+import matplotlib.pyplot as plt
+import seaborn as sns  
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    classification_report,
+    confusion_matrix
+)
+from train_model import SignLanguageModel
 
 
 def generate_class_to_idx(data_dir):
-  
     classes = sorted(os.listdir(data_dir)) 
     return {cls: idx for idx, cls in enumerate(classes)}
 
@@ -52,8 +55,35 @@ class TestDataset:
     def __getitem__(self, idx):
         return torch.FloatTensor(self.samples[idx]), self.labels[idx]
 
+
+def plot_metrics(metrics):
+    """
+    Plots a bar chart for accuracy, precision, recall, and F1-score.
+    """
+    labels = list(metrics.keys())
+    values = list(metrics.values())
+
+    plt.figure(figsize=(8, 5))
+    plt.bar(labels, values, color=['blue', 'orange', 'green', 'red'])
+    plt.title('Performance Metrics')
+    plt.ylabel('Score')
+    plt.ylim(0, 1)
+    plt.show()
+
+
+def plot_confusion_matrix(cm, class_names):
+    """
+    Plots the confusion matrix as a heatmap.
+    """
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted Labels')
+    plt.ylabel('True Labels')
+    plt.show()
+
+
 def evaluate_model(model_path, test_dir, class_to_idx):
- 
     dataset = TestDataset(test_dir, class_to_idx)
     inputs = torch.stack([dataset[i][0] for i in range(len(dataset))])
     labels = torch.tensor([dataset[i][1] for i in range(len(dataset))])  
@@ -63,7 +93,6 @@ def evaluate_model(model_path, test_dir, class_to_idx):
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
 
- 
     with torch.no_grad():
         outputs = model(inputs)
         _, predictions = torch.max(outputs, 1)
@@ -71,19 +100,39 @@ def evaluate_model(model_path, test_dir, class_to_idx):
     predictions = predictions.cpu().numpy()  
     labels = labels.cpu().numpy()            
 
-  
+    # Metrics
     acc = accuracy_score(labels, predictions)
+    precision = precision_score(labels, predictions, average='weighted')
+    recall = recall_score(labels, predictions, average='weighted')
+    f1 = f1_score(labels, predictions, average='weighted')
+
+    metrics = {
+        "Accuracy": acc,
+        "Precision": precision,
+        "Recall": recall,
+        "F1-Score": f1
+    }
+
     print(f"Accuracy: {acc:.2f}")
+    print(f"Precision: {precision:.2f}")
+    print(f"Recall: {recall:.2f}")
+    print(f"F1-Score: {f1:.2f}")
     print("\nClassification Report:")
     print(classification_report(labels, predictions, target_names=list(class_to_idx.keys())))
-    print("\nConfusion Matrix:")
-    print(confusion_matrix(labels, predictions))
 
-    
+    # Confusion Matrix
+    cm = confusion_matrix(labels, predictions)
+    print("\nConfusion Matrix:")
+    print(cm)
+
+    # Plot metrics and confusion matrix
+    plot_metrics(metrics)
+    plot_confusion_matrix(cm, list(class_to_idx.keys()))
+
+
 if __name__ == "__main__":
     model_path = "data/model/sign_language_model.pth"
     test_dir = "data/test_landmarks"
     class_to_idx = generate_class_to_idx(test_dir)
-
 
     evaluate_model(model_path, test_dir, class_to_idx)
